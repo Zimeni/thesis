@@ -77,38 +77,39 @@ print("saver = tf.train.Saver(): ")
 model_save_path="./thesis/"
 model_name='thesis'
 
-with tf.Session() as sess:
-    summaryMerged = tf.summary.merge_all()
+with tf.device("/gpu:0"):
+    with tf.Session() as sess:
+        summaryMerged = tf.summary.merge_all()
 
-    filename = "./summary_log/run" + datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%s")
-    # setting global steps
-    tf.global_variables_initializer().run()
-    sess.run(tf.local_variables_initializer())
+        filename = "./summary_log/run" + datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%s")
+        # setting global steps
+        tf.global_variables_initializer().run()
+        sess.run(tf.local_variables_initializer())
 
-    if os.path.exists(model_save_path+'checkpoint'):
-        # saver = tf.train.import_meta_graph('./saved '+modelName+'/model.ckpt.meta')
-        saver.restore(sess, tf.train.latest_checkpoint(model_save_path))
-        print("saver.restore(sess, tf.train.latest_checkpoint(model_save_path)): ")
+        if os.path.exists(model_save_path+'checkpoint'):
+            # saver = tf.train.import_meta_graph('./saved '+modelName+'/model.ckpt.meta')
+            saver.restore(sess, tf.train.latest_checkpoint(model_save_path))
+            print("saver.restore(sess, tf.train.latest_checkpoint(model_save_path)): ")
 
-    writer = tf.summary.FileWriter(filename, sess.graph)
+        writer = tf.summary.FileWriter(filename, sess.graph)
 
-    for epoch in range(epochs):
-        #batches = dgTrain.get_mini_batches(batchSize,(128,128), allchannel=True)
-        batches = dgTrain.get_mini_batches(batchSize,(252,252), allchannel=True)
+        for epoch in range(epochs):
+            #batches = dgTrain.get_mini_batches(batchSize,(128,128), allchannel=True)
+            batches = dgTrain.get_mini_batches(batchSize,(252,252), allchannel=True)
 
-        for imgs ,labels in batches:
-            print("IMAGES SHAPE: " + str(imgs.size))
-            imgs=np.divide(imgs, 255)
+            for imgs ,labels in batches:
+                print("IMAGES SHAPE: " + str(imgs.size))
+                imgs=np.divide(imgs, 255)
 
-            optimizer.run(feed_dict={input_img: imgs, target_labels: labels})
+                optimizer.run(feed_dict={input_img: imgs, target_labels: labels})
 
-            if (epoch+1) % 1 == 0:
-                #validateBatch = dgValidate.get_mini_batches(batchSize,(128,128), allchannel=True)
-                validateBatch = dgValidate.get_mini_batches(batchSize,(252,252), allchannel=True)
-                for imgs, labels in validateBatch:
-                    train_accuracy = accuracy.eval(feed_dict={
-                      input_img: imgs, target_labels: labels})
-                    print("step %d, training accuracy %g"%(epoch+1, train_accuracy))
+                if (epoch+1) % 1 == 0:
+                    #validateBatch = dgValidate.get_mini_batches(batchSize,(128,128), allchannel=True)
+                    validateBatch = dgValidate.get_mini_batches(batchSize,(252,252), allchannel=True)
+                    for imgs, labels in validateBatch:
+                        train_accuracy = accuracy.eval(feed_dict={
+                          input_img: imgs, target_labels: labels})
+                        print("step %d, training accuracy %g"%(epoch+1, train_accuracy))
 
-    print("Saving the model")
-    saver.save(sess, model_save_path + model_name + '.chkp')
+        print("Saving the model")
+        saver.save(sess, model_save_path + model_name + '.chkp')
